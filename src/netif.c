@@ -1007,6 +1007,7 @@ static inline void netif_pkt_type_tab_init(void)
         INIT_LIST_HEAD(&pkt_type_tab[i]);
 }
 
+//注册三层协议
 int netif_register_pkt(struct pkt_type *pt)
 {
     struct pkt_type *cur;
@@ -2139,6 +2140,7 @@ int netif_xmit(struct rte_mbuf *mbuf, struct netif_port *dev)
     return netif_hard_xmit(mbuf, dev);
 }
 
+//二层区分报文类型
 static inline eth_type_t eth_type_parse(const struct ether_hdr *eth_hdr,
                                         const struct netif_port *dev)
 {
@@ -2155,17 +2157,20 @@ static inline eth_type_t eth_type_parse(const struct ether_hdr *eth_hdr,
     return ETH_PKT_OTHERHOST;
 }
 
+//报文处理
 int netif_rcv(struct netif_port *dev, __be16 eth_type, struct rte_mbuf *mbuf)
 {
     struct pkt_type *pt;
     assert(dev && mbuf && mbuf->port <= NETIF_MAX_PORTS);
 
+    //通过ethnet类型，查找到可处理的pkt_type
     pt = pkt_type_get(eth_type, dev);
     if (!pt)
         return EDPVS_KNICONTINUE;
 
     mbuf->l2_len = 0; /* make sense ? */
 
+    //处理此类型的三层报文
     return pt->func(mbuf, dev);
 }
 
@@ -2240,6 +2245,7 @@ static inline int netif_deliver_mbuf(struct rte_mbuf *mbuf,
     if (unlikely(NULL == rte_pktmbuf_adj(mbuf, sizeof(struct ether_hdr))))
         return EDPVS_INVPKT;
 
+    //三层报文处理入口
     err = pt->func(mbuf, dev);
 
     if (err == EDPVS_KNICONTINUE) {
@@ -2285,10 +2291,12 @@ void lcore_process_packets(struct netif_queue_conf *qconf, struct rte_mbuf **mbu
     struct rte_mbuf *mbuf_copied = NULL;
 
     /* prefetch packets */
+    //预取后面的报文
     for (t = 0; t < count && t < NETIF_PKT_PREFETCH_OFFSET; t++)
         rte_prefetch0(rte_pktmbuf_mtod(mbufs[t], void *));
 
     /* L2 filter */
+    //遍历每个报文，进行独立处理
     for (i = 0; i < count; i++) {
         struct rte_mbuf *mbuf = mbufs[i];
         struct netif_port *dev = netif_port_get(mbuf->port);
@@ -2298,6 +2306,8 @@ void lcore_process_packets(struct netif_queue_conf *qconf, struct rte_mbuf **mbu
             lcore_stats[cid].dropped++;
             continue;
         }
+
+        /*取bond的master接口*/
         if (dev->type == PORT_TYPE_BOND_SLAVE) {
             dev = dev->bond->slave.master;
             mbuf->port = dev->id;
@@ -3135,6 +3145,7 @@ static struct netif_port* netif_rte_port_alloc(portid_t id, int nrxq,
     return port;
 }
 
+//通过port id查找对应的netif_port
 struct netif_port* netif_port_get(portid_t id)
 {
     int hash = port_tab_hashkey(id);

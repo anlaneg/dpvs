@@ -184,12 +184,14 @@ static int ipv4_local_in_fin(struct rte_mbuf *mbuf)
 
     /* deliver to upper layer */
     rte_spinlock_lock(&inet_prot_lock);
+    //取l4层协议，处理此报文
     prot = inet_prots[iph->next_proto_id];
     if (prot)
         handler = prot->handler;
     rte_spinlock_unlock(&inet_prot_lock);
 
     if (handler) {
+        /*l4报文处理入口*/
         err = handler(mbuf);
         IP4_INC_STATS(indelivers);
     } else {
@@ -212,6 +214,7 @@ static int ipv4_local_in(struct rte_mbuf *mbuf)
         }
     }
 
+    //提供local_in hook点
     return INET_HOOK(AF_INET, INET_HOOK_LOCAL_IN, mbuf,
             netif_port_get(mbuf->port), NULL, ipv4_local_in_fin);
 }
@@ -311,6 +314,7 @@ static int ipv4_forward(struct rte_mbuf *mbuf)
     iph->hdr_checksum = (uint16_t)(csum + (csum >= 0xffff));
     iph->time_to_live--;
 
+    /*调用forward hook点*/
     return INET_HOOK(AF_INET, INET_HOOK_FORWARD, mbuf,
             netif_port_get(mbuf->port), rt->port, ipv4_forward_fin);
 
@@ -334,6 +338,7 @@ static int ipv4_rcv_fin(struct rte_mbuf *mbuf)
     eth_type_t etype = mbuf->packet_type; /* FIXME: use other field ? */
 
     /* input route decision */
+    /*路由表查询*/
     rt = route4_input(mbuf, (struct in_addr *)&iph->dst_addr,
             (struct in_addr *)&iph->src_addr,
             iph->type_of_service, netif_port_get(mbuf->port));
@@ -352,11 +357,13 @@ static int ipv4_rcv_fin(struct rte_mbuf *mbuf)
     mbuf->userdata = (void *)rt;
 
     if (rt->flag & RTF_LOCALIN) {
+        /*本机报文入口*/
         return ipv4_local_in(mbuf);
     } else if (rt->flag & RTF_KNI) { /* destination is KNI dev's IP */
         route4_put(rt);
         return EDPVS_KNICONTINUE;
     } else if  (rt->flag & RTF_FORWARD) {
+        /*fwd报文入口*/
         if (etype != ETH_PKT_HOST) {
             /* multicast or broadcast */
             route4_put(rt);
@@ -376,6 +383,7 @@ drop:
     return err;
 }
 
+//ipv4报文入口
 static int ipv4_rcv(struct rte_mbuf *mbuf, struct netif_port *port)
 {
     struct ipv4_hdr *iph;
@@ -431,6 +439,7 @@ static int ipv4_rcv(struct rte_mbuf *mbuf, struct netif_port *port)
     if (unlikely(iph->next_proto_id == IPPROTO_OSPF))
         return EDPVS_KNICONTINUE;
 
+    //触发pre_routing钩子点
     return INET_HOOK(AF_INET, INET_HOOK_PRE_ROUTING,
                      mbuf, port, NULL, ipv4_rcv_fin);
 
@@ -578,6 +587,7 @@ int ipv4_xmit(struct rte_mbuf *mbuf, const struct flow4 *fl4)
     return ipv4_local_out(mbuf);
 }
 
+//注册l4层协议
 int ipv4_register_protocol(struct inet_protocol *prot,
         unsigned char protocol)
 {

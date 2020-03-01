@@ -114,6 +114,7 @@ int ipip_init(void)
     if (err != EDPVS_OK)
         return err;
 
+    //注册ipip协议
     err = ipv4_register_protocol(&ipip_proto, IPPROTO_IPIP);
     if (err != EDPVS_OK) {
         ip_tunnel_term_tab(&ipip_tunnel_tab);

@@ -178,6 +178,7 @@ static struct route_entry *route_local_lookup(uint32_t dest, const struct netif_
     return NULL;
 }
 
+//local路由表查询
 struct route_entry *route_out_local_lookup(uint32_t dest)
 {
     unsigned hashkey;
@@ -414,6 +415,7 @@ struct route_entry *route4_input(const struct rte_mbuf *mbuf,
                                 )
 {
     struct route_entry *route;
+    /*确认反向是否可达*/
     route = route_local_lookup(daddr->s_addr, port);
     if (route){
         return route;

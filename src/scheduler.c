@@ -185,6 +185,7 @@ static int dpvs_job_loop(void *arg)
     RTE_LOG(INFO, DSCHED, "lcore %02d enter %s loop\n", cid, dpvs_lcore_role_str(role));
 
     /* do init job */
+    //处理初始化工作
     list_for_each_entry(job, &dpvs_lcore_jobs[role][LCORE_JOB_INIT], list) {
         do_lcore_job(job);
     }
@@ -227,6 +228,7 @@ static int dpvs_job_loop(void *arg)
     return EDPVS_OK;
 }
 
+//转发线程入口
 int dpvs_lcore_start(int is_master)
 {
     if (is_master)

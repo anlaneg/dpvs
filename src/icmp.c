@@ -275,6 +275,7 @@ void icmp_send(struct rte_mbuf *imbuf, int type, int code, uint32_t info)
     return;
 }
 
+//icmp报文收取
 static int icmp_rcv(struct rte_mbuf *mbuf)
 {
     struct ipv4_hdr *iph = mbuf->userdata;
@@ -313,6 +314,7 @@ int icmp_init(void)
 {
     int err;
 
+    //注册icmp协议
     err = ipv4_register_protocol(&icmp_protocol, IPPROTO_ICMP);
 
     return err;

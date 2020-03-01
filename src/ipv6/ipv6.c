@@ -655,6 +655,7 @@ int ipv6_init(void)
         return err;
 
     /* htons, cpu_to_be16 not work when struct initialization :( */
+    //注册ipv6报文处理
     ip6_pkt_type.type = htons(ETHER_TYPE_IPv6);
 
     err = netif_register_pkt(&ip6_pkt_type);

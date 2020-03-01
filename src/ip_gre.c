@@ -259,6 +259,7 @@ static int gre_change(struct netif_port *dev,
     return EDPVS_OK;
 }
 
+//gre报文收取
 static int gre_rcv(struct rte_mbuf *mbuf)
 {
     int hlen;
@@ -310,6 +311,7 @@ int gre_init(void)
     if (err != EDPVS_OK)
         return err;
 
+    //注册gre协议
     err = ipv4_register_protocol(&gre_proto, IPPROTO_GRE);
     if (err != EDPVS_OK) {
         ip_tunnel_term_tab(&gre_tunnel_tab);
