@@ -483,6 +483,7 @@ int ipv4_init(void)
     if ((err = ipv4_frag_init()) != EDPVS_OK)
         return err;
 
+    //注册ipv4报文处理
     ip4_pkt_type.type = htons(ETHER_TYPE_IPv4);
     if ((err = netif_register_pkt(&ip4_pkt_type)) != EDPVS_OK) {
         ipv4_frag_term();

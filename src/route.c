@@ -415,7 +415,6 @@ struct route_entry *route4_input(const struct rte_mbuf *mbuf,
                                 )
 {
     struct route_entry *route;
-    /*确认反向是否可达*/
     route = route_local_lookup(daddr->s_addr, port);
     if (route){
         return route;

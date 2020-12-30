@@ -1113,6 +1113,7 @@ static int arp_init(void)
 
     master_cid = rte_lcore_id();
 
+    //注册arp报文处理
     arp_pkt_type.type = rte_cpu_to_be_16(ETHER_TYPE_ARP);
     if ((err = netif_register_pkt(&arp_pkt_type)) != EDPVS_OK)
         return err;
